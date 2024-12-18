@@ -28,13 +28,30 @@ for record in data:
     session.add(model(id=record.get('pk'), **record.get('fields')))
 session.commit()
 
-publisher = input('Введите идентификатор или название книги:')
-def price_list(publisher):
-    result = session.query(Book.title, Shop.name, Sale.price, Sale.date_sale).filter(Publisher.name==publisher).filter(Publisher.id==Book.id_publisher).filter(Book.id==Stock.id_book).filter(Stock.id_shop==Shop.id).filter(Stock.id==Sale.id_stock).all()
-    return result
-result = price_list(publisher)
-for r in result:
-    print(f'{r[0]} | {r[1]} | {r[2]}| {r[3]}')
+def price_list(serch=input('Введите идентификатор или название книги:')):
+    serch = serch
+    if serch.isdigit():
+        results = session.query(Book.title, Shop.name, Sale.price, Sale.date_sale)\
+        .join(Publisher, Publisher.id == Book.id_publisher) \
+        .join(Stock, Stock.id_book == Book.id) \
+        .join(Shop, Shop.id == Stock.id_shop) \
+        .join(Sale, Sale.id_stock == Stock.id) \
+        .filter(Publisher.id == serch).all()
+    else:
+        results = session.query(Book.title, Shop.name, Sale.price, Sale.date_sale) \
+            .join(Publisher, Publisher.id == Book.id_publisher) \
+            .join(Stock, Stock.id_book == Book.id) \
+            .join(Shop, Shop.id == Stock.id_shop) \
+            .join(Sale, Sale.id_stock == Stock.id) \
+            .filter(Publisher.name == serch).all()
+    for book, shop, price, date_sale in results:
+        print(f'{book: <40} | {shop: <10} | {price: <10} | {date_sale.strftime('%d-%m-%Y')}')
+    
+
 
 session.commit()
 session.close()
+
+if __name__ == '__main__':
+    create_connection('postgresql', 'postgres', 'postgres', 'localhost', '5432', 'orm_db')
+    price_list()
